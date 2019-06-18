@@ -1,0 +1,52 @@
+{
+  "name": "typescript-all-in-converter",
+  "version": "0.0.0",
+  "description": "Convert a project all in one",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node ./src/cli.ts",
+    "start:debug": "ts-node ./src/cli.ts",
+    "test": "jest",
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "bin": {
+    "typescript-all-in": "./dist/cli.js"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  },
+  "author": "DanielMSchmidt<danielmschmidt92@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/generator": "^7.4.4",
+    "@babel/parser": "^7.4.5",
+    "@babel/template": "^7.4.4",
+    "@babel/traverse": "^7.4.5",
+    "@types/commander": "^2.12.2",
+    "@types/node": "^12.0.8",
+    "@types/prettier": "^1.16.4",
+    "@types/shelljs": "^0.8.5",
+    "@types/yargs": "^13.0.0",
+    "@types/glob": "^7.1.1",
+    "@types/jest": "^24.0.15",
+    "glob": "^7.1.4",
+    "shelljs": "^0.8.3",
+    "ts-node": "^8.3.0",
+    "yargs": "^13.2.4"
+  },
+  "peerDependencies": {
+    "typescript": ">= 3",
+    "prettier": ">= 1"
+  },
+  "devDependencies": {
+    "husky": "^2.4.1",
+    "jest": "^24.8.0",
+    "typescript": "^3.5.2",
+    "prettier": "^1.18.2",
+    "pretty-quick": "^1.11.1",
+    "ts-jest": "^24.0.2"
+  }
+}

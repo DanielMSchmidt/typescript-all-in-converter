@@ -1,0 +1,3 @@
+function foo(str: string): number {
+    return 3 * str;
+}
