@@ -3,6 +3,7 @@
 import yargs from "yargs";
 import { moveToTypescript } from "./";
 
+// TODO: allow array of ignore patterns for glob
 yargs
   .command(
     "convert [path]",

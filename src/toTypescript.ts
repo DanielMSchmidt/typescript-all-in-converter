@@ -1,11 +1,7 @@
 import { sync as glob } from "glob";
 import * as fs from "fs";
 import shell from "shelljs";
-
-interface Logger {
-  info(log: string): void;
-  log(log: string): void;
-}
+import { Logger } from "./logger";
 
 function isReactFile(path: string): boolean {
   const content = fs.readFileSync(path, "utf-8");
