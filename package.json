@@ -1,8 +1,8 @@
 {
   "name": "typescript-all-in-converter",
-  "version": "0.0.0",
+  "version": "0.0.1-alpha.1",
   "description": "Convert a project all in one",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "start": "ts-node ./src/cli.ts",
     "start:debug": "ts-node ./src/cli.ts",
@@ -10,9 +10,7 @@
     "build": "tsc",
     "prepare": "npm run build"
   },
-  "bin": {
-    "typescript-all-in": "./dist/cli.js"
-  },
+  "bin": "./dist/cli.js",
   "husky": {
     "hooks": {
       "pre-commit": "pretty-quick --staged"
