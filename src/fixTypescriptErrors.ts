@@ -6,6 +6,7 @@ import generate from "@babel/generator";
 import * as t from "@babel/types";
 import { Logger } from "./logger";
 import prettier from "prettier";
+import ignoreComment from "./ignoreComment";
 
 function findNearestNode(position: number, ast: t.File) {
   let result: NodePath<t.Expression>;
@@ -48,7 +49,6 @@ function findNearestNode(position: number, ast: t.File) {
   return result;
 }
 
-const ignoreComment = " @ts-ignore typescript-all-in";
 function addIgnoreComment(path: NodePath<t.Node>): void {
   if (!path || !path.node) {
     return;
