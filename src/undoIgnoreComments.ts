@@ -21,7 +21,8 @@ export default function undoIgnoreComments(
   logger: Logger
 ) {
   // TODO: this does not match every file, let's check why
-  [...glob(root + "/{**/,}*.ts"), ...glob(root + "/{**/,}*.tsx")]
+  glob("./**/*.ts?(x)", { follow: true, cwd: root })
     .filter(path => ignorePaths.some(ignorePath => path.includes(ignorePath)))
+    .map(relativePath => root + relativePath.replace(".", ""))
     .forEach(removeIgnoreComment.bind(null, logger));
 }
