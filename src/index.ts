@@ -3,7 +3,7 @@ import { getLogger } from "./logger";
 import fixTypescriptError from "./fixTypescriptErrors";
 import undoIgnoreComments from "./undoIgnoreComments";
 
-export function moveToTypescript(
+export async function moveToTypescript(
   projectRoot: string,
   ignorePaths: string[],
   verbose: boolean
@@ -13,12 +13,12 @@ export function moveToTypescript(
   logger.info("Moving files to typescript");
   moveFilesToTypescript(projectRoot, ignorePaths, logger);
   logger.info("Removing previous ignores");
-  undoIgnoreComments(projectRoot, ignorePaths, logger);
+  await undoIgnoreComments(projectRoot, ignorePaths, logger);
   logger.info("Fixing typescript errors");
   fixTypescriptError(projectRoot, ignorePaths, logger);
 }
 
-export function removeComments(
+export async function removeComments(
   projectRoot: string,
   ignorePaths: string[],
   verbose: boolean
@@ -26,5 +26,5 @@ export function removeComments(
   const logger = getLogger(verbose);
 
   logger.info("Removing ignores");
-  undoIgnoreComments(projectRoot, ignorePaths, logger);
+  await undoIgnoreComments(projectRoot, ignorePaths, logger);
 }

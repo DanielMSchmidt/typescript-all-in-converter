@@ -1,5 +1,6 @@
 import { sync as glob } from "glob";
 import * as fs from "fs";
+import recursive from "recursive-readdir";
 import { Logger } from "./logger";
 import ignoreComment from "./ignoreComment";
 
@@ -15,14 +16,30 @@ export function removeIgnoreComment(logger: Logger, path: string) {
   logger.info(`Done removing comments from ${path}`);
 }
 
-export default function undoIgnoreComments(
+const findTypescriptFiles = (
+  root: string,
+  ignorePaths: string[]
+): Promise<string[]> =>
+  new Promise((resolve, reject) =>
+    recursive(
+      root,
+      [
+        path => {
+          return (
+            !path.includes(".ts") &&
+            ignorePaths.some(ignorePath => path.includes(ignorePath))
+          );
+        }
+      ],
+      (err, files) => (err ? reject(err) : resolve(files))
+    )
+  );
+
+export default async function undoIgnoreComments(
   root: string,
   ignorePaths: string[],
   logger: Logger
 ) {
-  // TODO: this does not match every file, let's check why
-  glob("./**/*.ts?(x)", { follow: true, cwd: root })
-    .filter(path => ignorePaths.some(ignorePath => path.includes(ignorePath)))
-    .map(relativePath => root + relativePath.replace(".", ""))
-    .forEach(removeIgnoreComment.bind(null, logger));
+  const files = await findTypescriptFiles(root, ignorePaths);
+  files.forEach(removeIgnoreComment.bind(null, logger));
 }

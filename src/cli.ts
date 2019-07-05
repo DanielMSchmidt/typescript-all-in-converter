@@ -32,7 +32,7 @@ yargs
         throw new Error("path must be a string");
       }
 
-      moveToTypescript(path, ignorePaths, verbose as boolean);
+      return moveToTypescript(path, ignorePaths, verbose as boolean);
     }
   )
   .command(
@@ -62,7 +62,7 @@ yargs
         throw new Error("path must be a string");
       }
 
-      removeComments(path, ignorePaths, verbose as boolean);
+      return removeComments(path, ignorePaths, verbose as boolean);
     }
   )
   .pkgConf("tsAllIn")
