@@ -1,20 +1,8 @@
-import { sync as glob } from "glob";
+import replaceInFile from "replace-in-file";
 import * as fs from "fs";
 import recursive from "recursive-readdir";
 import { Logger } from "./logger";
 import ignoreComment from "./ignoreComment";
-
-export function removeCommentFromFile(content: string): string {
-  return content.split("//" + ignoreComment).join("");
-}
-
-export function removeIgnoreComment(logger: Logger, path: string) {
-  logger.info(`Removing comments from ${path}`);
-
-  fs.writeFileSync(path, fs.readFileSync(removeCommentFromFile(path), "utf-8"));
-
-  logger.info(`Done removing comments from ${path}`);
-}
 
 const findTypescriptFiles = (
   root: string,
@@ -41,5 +29,10 @@ export default async function undoIgnoreComments(
   logger: Logger
 ) {
   const files = await findTypescriptFiles(root, ignorePaths);
-  files.forEach(removeIgnoreComment.bind(null, logger));
+  logger.info(`removing comments in ${files.length} files`);
+  await replaceInFile({
+    files,
+    from: /\/\/ @ts-ignore typescript-all-in/g,
+    to: ""
+  });
 }
