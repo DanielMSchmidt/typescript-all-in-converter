@@ -31,6 +31,6 @@ export default function moveToTypescript(
   logger: Logger
 ) {
   glob(root + "/**/*.js")
-    .filter(path => ignorePaths.some(ignorePath => path.includes(ignorePath)))
+    .filter(path => !ignorePaths.some(ignorePath => path.includes(ignorePath)))
     .forEach(moveFileToTypescript.bind(null, logger));
 }

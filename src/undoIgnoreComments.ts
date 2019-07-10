@@ -1,8 +1,6 @@
 import replaceInFile from "replace-in-file";
-import * as fs from "fs";
 import recursive from "recursive-readdir";
 import { Logger } from "./logger";
-import ignoreComment from "./ignoreComment";
 
 const findTypescriptFiles = (
   root: string,
