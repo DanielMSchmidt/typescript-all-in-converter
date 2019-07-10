@@ -4,7 +4,7 @@ Ever had a massive project with a lot of Javascript files? Moving everything to 
 
 ## Usage
 
-Run `typescript-all-in /path/to/project` in a project where a typescript converter is setup and typescript is installd. The effect will be:
+Run `npx typescript-all-in /path/to/project` in a project where a typescript converter is setup and typescript is installd. The effect will be:
 
 - Every `js` file will be changed to a `ts` or `tsx` file
 - Every typescript error will be ignored with a `// @ts-ignore typescript-all-in` error, so the project will still compile
