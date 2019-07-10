@@ -1,18 +1,26 @@
 import fs from "fs";
-import * as ts from "typescript";
+import path from "path";
+import * as tsTypes from "typescript";
 import * as parser from "@babel/parser";
 import traverse, { NodePath } from "@babel/traverse";
 import generate from "@babel/generator";
 import * as t from "@babel/types";
 import { Logger } from "./logger";
-import prettier from "prettier";
 import ignoreComment from "./ignoreComment";
+
+const resolve = (moduleName: string) =>
+  require(require.resolve(moduleName, {
+    paths: [path.join(process.cwd(), "node_modules")]
+  }) as any);
+
+const ts = resolve("typescript");
+const prettier = resolve("prettier");
 
 function findNearestNode(position: number, ast: t.File) {
   let result: NodePath<t.Expression>;
 
   traverse(ast, {
-    BinaryExpression: function(path) {
+    Expression: function(path) {
       const node = path.node;
 
       if (!result) {
@@ -68,12 +76,15 @@ function addIgnoreComment(path: NodePath<t.Node>): void {
   }
 }
 
-function fixErrorsForFile(diagnosticList: ts.Diagnostic[], logger: Logger) {
+function fixErrorsForFile(
+  diagnosticList: tsTypes.Diagnostic[],
+  logger: Logger
+) {
   if (!diagnosticList.length) {
     return;
   }
 
-  const file = diagnosticList[0].file as ts.SourceFile;
+  const file = diagnosticList[0].file as tsTypes.SourceFile;
   const fileName = file.fileName;
   // get positions
   const errorPositions = diagnosticList
@@ -132,7 +143,7 @@ export default function detectAndFixTypescriptErrors(
   }
 
   // tslint:disable-next-line no-any
-  const host: ts.ParseConfigFileHost = ts.sys as any;
+  const host: tsTypes.ParseConfigFileHost = ts.sys as any;
 
   const parsedCmd = ts.getParsedCommandLineOfConfigFile(
     configPath,
@@ -155,8 +166,8 @@ export default function detectAndFixTypescriptErrors(
 
   const allDiagnostics = ts.getPreEmitDiagnostics(program).concat(diagnostics);
 
-  const fileNameMap: Record<string, ts.Diagnostic[]> = {};
-  allDiagnostics.forEach(diagnostic => {
+  const fileNameMap: Record<string, tsTypes.Diagnostic[]> = {};
+  allDiagnostics.forEach((diagnostic: any) => {
     if (diagnostic.file) {
       const fileName = diagnostic.file.fileName;
       fileNameMap[fileName] = fileNameMap[fileName] || [];

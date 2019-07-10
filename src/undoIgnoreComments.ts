@@ -28,9 +28,16 @@ export default async function undoIgnoreComments(
 ) {
   const files = await findTypescriptFiles(root, ignorePaths);
   logger.info(`removing comments in ${files.length} files`);
-  await replaceInFile({
-    files,
-    from: /\/\/ @ts-ignore typescript-all-in/g,
-    to: ""
-  });
+
+  // We don't want to have two many file handles open at once
+  while (files.length > 0) {
+    const batch = files.splice(0, 50);
+
+    await replaceInFile({
+      files: batch,
+      from: /\/\/ @ts-ignore typescript-all-in/g,
+      to: ""
+    });
+  }
+  logger.info(`done removing comments from files`);
 }
