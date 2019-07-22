@@ -16,6 +16,10 @@ const resolve = (moduleName: string) =>
 const ts = resolve("typescript");
 const prettier = resolve("prettier");
 
+function length(node: t.Expression): number {
+  return (node.end || Infinity) - (node.start || Infinity);
+}
+
 function findNearestNode(position: number, ast: t.File, logger: Logger) {
   let result: NodePath<t.Expression>;
   logger.log("Trying to find element at position", position);
@@ -25,7 +29,7 @@ function findNearestNode(position: number, ast: t.File, logger: Logger) {
       const node = path.node;
 
       logger.log("Should I set?", node);
-      logger.log(`${node.start} <= node <= ${node.end}`);
+      logger.log(`${node.start} < node < ${node.end}`);
 
       /**
        * 1
@@ -43,6 +47,15 @@ function findNearestNode(position: number, ast: t.File, logger: Logger) {
         result = path;
         return;
       } else {
+        // Look for the narrowest element
+        if (length(result.node) > length(node)) {
+          logger.log("Found more specific element");
+          result = path;
+          return;
+        } else {
+          logger.log("Element is less specific, ignoring");
+        }
+
         return;
       }
     }
@@ -73,6 +86,16 @@ function addIgnoreComment(path: NodePath<t.Node>): void {
 
 function findCommentPosition(node: NodePath<t.Expression>, logger: Logger) {
   logger.log("Finding comment position");
+
+  // Error is on a literal, need to find parent expression
+  if (node.isLiteral()) {
+    logger.log("Treating node as a literal, finding parent expression");
+
+    return node.findParent(
+      parent => parent.isStatement() || parent.isExpression()
+    );
+  }
+
   if (node.getAllPrevSiblings().length) {
     const silblings = node.getAllPrevSiblings();
     logger.log("Found previous silblings", silblings);

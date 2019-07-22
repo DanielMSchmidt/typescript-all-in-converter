@@ -29,7 +29,7 @@ function runFixer(input: string, tsConfig?: Object): string {
     "utf-8"
   );
 
-  detectAndFixTypescriptErrors(tmpFolderPath, [], debugLogger);
+  detectAndFixTypescriptErrors(tmpFolderPath, [], console);
   const content = fs.readFileSync(filePath, "utf-8");
   tmpFolder.removeCallback();
   return content;
@@ -44,12 +44,12 @@ describe("fixTypescriptErrors", () => {
     }
     `)
     ).toMatchInlineSnapshot(`
-            "function foo(str: string): number {
-              // @ts-ignore typescript-all-in
-              return 3 * str;
-            }
-            "
-        `);
+                  "function foo(str: string): number {
+                    // @ts-ignore typescript-all-in
+                    return 3 * str;
+                  }
+                  "
+            `);
   });
 
   it("in normal expression", () => {
@@ -58,10 +58,10 @@ describe("fixTypescriptErrors", () => {
       const message: number = "hello world";
     `)
     ).toMatchInlineSnapshot(`
-            "// @ts-ignore typescript-all-in
-            const message: number = \\"hello world\\";
-            "
-        `);
+                  "// @ts-ignore typescript-all-in
+                  const message: number = \\"hello world\\";
+                  "
+            `);
   });
 
   it("in a lot of normal expressions", () => {
@@ -71,12 +71,12 @@ describe("fixTypescriptErrors", () => {
       const message3: boolean = true;
     `)
     ).toMatchInlineSnapshot(`
-            "const message1: boolean = true;
-            // @ts-ignore typescript-all-in
-            const message2: number = true;
-            const message3: boolean = true;
-            "
-        `);
+                  "const message1: boolean = true;
+                  // @ts-ignore typescript-all-in
+                  const message2: number = true;
+                  const message3: boolean = true;
+                  "
+            `);
   });
 
   it("inside a template string", () => {
@@ -88,15 +88,17 @@ describe("fixTypescriptErrors", () => {
           TrailingLine\`;
       }
       `)
-    ).toMatchInlineSnapshot(`function fu(amountOfCats: number) {
-      return \`
-        LeadingLine
-        My \${
-          // @ts-ignore typescript-all-in
-          amountOfCats * \\"Cats\\"
-        }
-        TrailingLine\`;
-    }
+    ).toMatchInlineSnapshot(`
+      "function fu(amountOfCats: number) {
+        return \`
+                LeadingLine
+                My \${
+                  // @ts-ignore typescript-all-in
+                  amountOfCats * \\"Cats\\"
+                }
+                TrailingLine\`;
+      }
+      "
     `);
   });
 });
