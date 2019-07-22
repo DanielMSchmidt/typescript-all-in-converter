@@ -16,40 +16,35 @@ const resolve = (moduleName: string) =>
 const ts = resolve("typescript");
 const prettier = resolve("prettier");
 
-function findNearestNode(position: number, ast: t.File) {
+function findNearestNode(position: number, ast: t.File, logger: Logger) {
   let result: NodePath<t.Expression>;
+  logger.log("Trying to find element at position", position);
 
   traverse(ast, {
     Expression: function(path) {
       const node = path.node;
 
-      if (!result) {
-        result = path;
-        return;
-      }
-      // We are searching for the last expression that ends before the error
+      logger.log("Should I set?", node);
+      logger.log(`${node.start} <= node <= ${node.end}`);
 
       /**
        * 1
-       * 2
-       * 3 position
-       * 4 node
-       */
-      if ((node.start || Infinity) > position) {
-        return;
-      }
-
-      /**
-       * 1 node
-       * 2 result
+       * 2 node
        * 3 position
        * 4
        */
-      if ((node.end || Infinity) < (result.node.end || Infinity)) {
+      if ((node.end || -Infinity) < position) {
+        logger.log("node is before position, ignoring");
         return;
       }
 
-      result = path;
+      if (!result) {
+        logger.log("Setting");
+        result = path;
+        return;
+      } else {
+        return;
+      }
     }
   });
 
@@ -74,6 +69,18 @@ function addIgnoreComment(path: NodePath<t.Node>): void {
       value: ignoreComment
     });
   }
+}
+
+function findCommentPosition(node: NodePath<t.Expression>, logger: Logger) {
+  logger.log("Finding comment position");
+  if (node.getAllPrevSiblings().length) {
+    const silblings = node.getAllPrevSiblings();
+    logger.log("Found previous silblings", silblings);
+
+    return silblings[silblings.length - 1];
+  }
+
+  return node.getStatementParent();
 }
 
 function fixErrorsForFile(
@@ -107,7 +114,8 @@ function fixErrorsForFile(
 
   // find all ast nodes
   const errorAstPaths = errorPositions
-    .map(position => findNearestNode(position, ast))
+    .map(position => findNearestNode(position, ast, logger))
+    .map(node => findCommentPosition(node, logger))
     .filter(result => result !== null);
 
   logger.log(`Adding ${errorAstPaths.length} comments to ${fileName}`);
