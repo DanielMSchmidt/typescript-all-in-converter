@@ -44,12 +44,12 @@ describe("fixTypescriptErrors", () => {
     }
     `)
     ).toMatchInlineSnapshot(`
-                        "function foo(str: string): number {
-                          // @ts-ignore typescript-all-in
-                          return 3 * str;
-                        }
-                        "
-                `);
+                              "function foo(str: string): number {
+                                // @ts-ignore typescript-all-in
+                                return 3 * str;
+                              }
+                              "
+                    `);
   });
 
   it("in normal expression", () => {
@@ -58,10 +58,10 @@ describe("fixTypescriptErrors", () => {
       const message: number = "hello world";
     `)
     ).toMatchInlineSnapshot(`
-                        "// @ts-ignore typescript-all-in
-                        const message: number = \\"hello world\\";
-                        "
-                `);
+                              "// @ts-ignore typescript-all-in
+                              const message: number = \\"hello world\\";
+                              "
+                    `);
   });
 
   it("in a lot of normal expressions", () => {
@@ -71,12 +71,12 @@ describe("fixTypescriptErrors", () => {
       const message3: boolean = true;
     `)
     ).toMatchInlineSnapshot(`
-                        "const message1: boolean = true;
-                        // @ts-ignore typescript-all-in
-                        const message2: number = true;
-                        const message3: boolean = true;
-                        "
-                `);
+                              "const message1: boolean = true;
+                              // @ts-ignore typescript-all-in
+                              const message2: number = true;
+                              const message3: boolean = true;
+                              "
+                    `);
   });
 
   it("inside a template string", () => {
@@ -89,17 +89,17 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-            "function fu(amountOfCats: number) {
-              return \`
-                      LeadingLine
-                      My \${
-                        // @ts-ignore typescript-all-in
-                        amountOfCats * \\"Cats\\"
-                      }
-                      TrailingLine\`;
-            }
-            "
-        `);
+                  "function fu(amountOfCats: number) {
+                    return \`
+                            LeadingLine
+                            My \${
+                              // @ts-ignore typescript-all-in
+                              amountOfCats * \\"Cats\\"
+                            }
+                            TrailingLine\`;
+                  }
+                  "
+            `);
   });
 
   it("inside a constructor", () => {
@@ -113,13 +113,31 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-      "class Parent {}
+            "class Parent {}
 
-      class MyClass extends Parent {
-        constructor() {
-          // @ts-ignore typescript-all-in
-          super(...arguments);
-        }
+            class MyClass extends Parent {
+              constructor() {
+                // @ts-ignore typescript-all-in
+                super(...arguments);
+              }
+            }
+            "
+        `);
+  });
+
+  it("a function param", () => {
+    expect(
+      runFixer(`
+      let firstLine = "yes";
+      export function fingerprintUrl(url) {
+        const shouldUrlBeAnError = true;
+      }
+      `)
+    ).toMatchInlineSnapshot(`
+      "let firstLine = \\"yes\\";
+      // @ts-ignore typescript-all-in
+      export function fingerprintUrl(url) {
+        const shouldUrlBeAnError = true;
       }
       "
     `);

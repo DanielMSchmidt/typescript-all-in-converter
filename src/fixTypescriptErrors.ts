@@ -29,16 +29,20 @@ const noOpPrettier = {
 const ts = resolve("typescript");
 const prettier = resolve("prettier", noOpPrettier);
 
-function length(node: t.Expression): number {
-  return (node.end || Infinity) - (node.start || Infinity);
+function length(node: t.Node): number {
+  if (!node.end || !node.start) {
+    return Infinity;
+  }
+
+  return node.end - node.start;
 }
 
 function findNearestNode(position: number, ast: t.File, logger: Logger) {
-  let result: NodePath<t.Expression>;
+  let result: NodePath<t.Node>;
   logger.log("Trying to find element at position", position);
 
   traverse(ast, {
-    Expression: function(path) {
+    enter(path) {
       const node = path.node;
 
       logger.log("Should I set?", node);
@@ -97,7 +101,7 @@ function addIgnoreComment(path: NodePath<t.Node>): void {
   }
 }
 
-function findCommentPosition(node: NodePath<t.Expression>, logger: Logger) {
+function findCommentPosition(node: NodePath<t.Node>, logger: Logger) {
   logger.log("Finding comment position");
 
   // Error is on a literal, need to find parent expression
@@ -114,6 +118,10 @@ function findCommentPosition(node: NodePath<t.Expression>, logger: Logger) {
     logger.log("Found previous silblings", silblings);
 
     return silblings[silblings.length - 1];
+  }
+
+  if (node.isProgram()) {
+    return node;
   }
 
   return node.getStatementParent();
