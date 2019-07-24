@@ -5,13 +5,14 @@ import * as parser from "@babel/parser";
 import traverse, { NodePath } from "@babel/traverse";
 import generate from "@babel/generator";
 import * as t from "@babel/types";
-import { Logger } from "./logger";
+import { Logger, getLogger } from "./logger";
 import ignoreComment from "./ignoreComment";
 
-const resolve = (moduleName: string) =>
-  require(require.resolve(moduleName, {
+const resolve = (moduleName: string) => {
+  return require(require.resolve(moduleName, {
     paths: [path.join(process.cwd(), "node_modules")]
   }) as any);
+};
 
 const ts = resolve("typescript");
 const prettier = resolve("prettier");
