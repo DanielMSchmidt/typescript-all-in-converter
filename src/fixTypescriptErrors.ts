@@ -8,14 +8,26 @@ import * as t from "@babel/types";
 import { Logger, getLogger } from "./logger";
 import ignoreComment from "./ignoreComment";
 
-const resolve = (moduleName: string) => {
-  return require(require.resolve(moduleName, {
-    paths: [path.join(process.cwd(), "node_modules")]
-  }) as any);
+const resolve = (moduleName: string, defaultReturn?: any) => {
+  try {
+    return require(require.resolve(moduleName, {
+      paths: [path.join(process.cwd(), "node_modules")]
+    }) as any);
+  } catch (e) {
+    if (defaultReturn) {
+      return defaultReturn;
+    }
+
+    throw e;
+  }
+};
+
+const noOpPrettier = {
+  format: (code: string) => code
 };
 
 const ts = resolve("typescript");
-const prettier = resolve("prettier");
+const prettier = resolve("prettier", noOpPrettier);
 
 function length(node: t.Expression): number {
   return (node.end || Infinity) - (node.start || Infinity);
