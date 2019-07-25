@@ -44,12 +44,12 @@ describe("fixTypescriptErrors", () => {
     }
     `)
     ).toMatchInlineSnapshot(`
-                                          "function foo(str: string): number {
-                                            // @ts-ignore typescript-all-in
-                                            return 3 * str;
-                                          }
-                                          "
-                            `);
+                                                "function foo(str: string): number {
+                                                  // @ts-ignore typescript-all-in
+                                                  return 3 * str;
+                                                }
+                                                "
+                                `);
   });
 
   it("in normal expression", () => {
@@ -58,10 +58,10 @@ describe("fixTypescriptErrors", () => {
       const message: number = "hello world";
     `)
     ).toMatchInlineSnapshot(`
-                                          "// @ts-ignore typescript-all-in
-                                          const message: number = \\"hello world\\";
-                                          "
-                            `);
+                                                "// @ts-ignore typescript-all-in
+                                                const message: number = \\"hello world\\";
+                                                "
+                                `);
   });
 
   it("in a lot of normal expressions", () => {
@@ -71,12 +71,12 @@ describe("fixTypescriptErrors", () => {
       const message3: boolean = true;
     `)
     ).toMatchInlineSnapshot(`
-                                          "const message1: boolean = true;
-                                          // @ts-ignore typescript-all-in
-                                          const message2: number = true;
-                                          const message3: boolean = true;
-                                          "
-                            `);
+                                                "const message1: boolean = true;
+                                                // @ts-ignore typescript-all-in
+                                                const message2: number = true;
+                                                const message3: boolean = true;
+                                                "
+                                `);
   });
 
   it("inside a template string", () => {
@@ -89,17 +89,17 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-                              "function fu(amountOfCats: number) {
-                                return \`
-                                        LeadingLine
-                                        My \${
-                                          // @ts-ignore typescript-all-in
-                                          amountOfCats * \\"Cats\\"
-                                        }
-                                        TrailingLine\`;
-                              }
-                              "
-                    `);
+                                    "function fu(amountOfCats: number) {
+                                      return \`
+                                              LeadingLine
+                                              My \${
+                                                // @ts-ignore typescript-all-in
+                                                amountOfCats * \\"Cats\\"
+                                              }
+                                              TrailingLine\`;
+                                    }
+                                    "
+                        `);
   });
 
   it("inside a constructor", () => {
@@ -113,16 +113,16 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-                        "class Parent {}
+                              "class Parent {}
 
-                        class MyClass extends Parent {
-                          constructor() {
-                            // @ts-ignore typescript-all-in
-                            super(...arguments);
-                          }
-                        }
-                        "
-                `);
+                              class MyClass extends Parent {
+                                constructor() {
+                                  // @ts-ignore typescript-all-in
+                                  super(...arguments);
+                                }
+                              }
+                              "
+                    `);
   });
 
   it("a function param", () => {
@@ -134,13 +134,13 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-                  "let firstLine = \\"yes\\";
-                  // @ts-ignore typescript-all-in
-                  export function fingerprintUrl(url) {
-                    const shouldUrlBeAnError = true;
-                  }
-                  "
-            `);
+                        "let firstLine = \\"yes\\";
+                        // @ts-ignore typescript-all-in
+                        export function fingerprintUrl(url) {
+                          const shouldUrlBeAnError = true;
+                        }
+                        "
+                `);
   });
 
   it("multiple function params", () => {
@@ -151,13 +151,13 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-      "// @ts-ignore typescript-all-in
-      export default function stream(url, options = {}) {
-        // @ts-ignore typescript-all-in
-        return Observable.create(function(observer) {});
-      }
-      "
-    `);
+            "// @ts-ignore typescript-all-in
+            export default function stream(url, options = {}) {
+              // @ts-ignore typescript-all-in
+              return Observable.create(function(observer) {});
+            }
+            "
+        `);
   });
 
   it("imports", () => {
@@ -167,11 +167,42 @@ describe("fixTypescriptErrors", () => {
       export function fingerprintUrl(url) {}
       `)
     ).toMatchInlineSnapshot(`
-            "// @ts-ignore typescript-all-in
-            import { help } from \\"./helpers\\";
-            // @ts-ignore typescript-all-in
-            export function fingerprintUrl(url) {}
-            "
-        `);
+                  "// @ts-ignore typescript-all-in
+                  import { help } from \\"./helpers\\";
+                  // @ts-ignore typescript-all-in
+                  export function fingerprintUrl(url) {}
+                  "
+            `);
+  });
+
+  it("lives with future linebreaks", () => {
+    expect(
+      runFixer(`
+      this.addListener = (type, callback) => {
+        if (!this.events[type]) {
+          this.events[type] = [];
+        }
+        this.events[type].push(callback);
+      };
+      `)
+    ).toMatchInlineSnapshot(`
+      "// @ts-ignore typescript-all-in
+      this.addListener = (
+        // @ts-ignore typescript-all-in
+        type,
+        // @ts-ignore typescript-all-in
+        callback
+      ) => {
+        // @ts-ignore typescript-all-in
+        if (!this.events[type]) {
+          // @ts-ignore typescript-all-in
+          this.events[type] = [];
+        }
+
+        // @ts-ignore typescript-all-in
+        this.events[type].push(callback);
+      };
+      "
+    `);
   });
 });

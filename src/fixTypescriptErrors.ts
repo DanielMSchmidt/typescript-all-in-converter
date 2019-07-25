@@ -59,6 +59,17 @@ function findNearestNode(position: number, ast: t.File, logger: Logger) {
         return;
       }
 
+      /**
+       * 1
+       * 2
+       * 3 position
+       * 4 node
+       */
+      if ((node.start || Infinity) > position) {
+        logger.log("node is after position, ignoring");
+        return;
+      }
+
       if (!result) {
         logger.log("Setting");
         result = path;
@@ -102,7 +113,7 @@ function addIgnoreComment(path: NodePath<t.Node>): void {
 }
 
 function findCommentPosition(node: NodePath<t.Node>, logger: Logger) {
-  logger.log("Finding comment position");
+  logger.log("Finding comment position for", node.node);
 
   // Error is on a literal, need to find parent expression
   if (node.isLiteral()) {
