@@ -1,6 +1,6 @@
 {
   "name": "typescript-all-in-converter",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha.2",
   "description": "Convert a project all in one",
   "main": "dist/index.js",
   "scripts": {
