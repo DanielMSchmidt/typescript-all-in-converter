@@ -93,7 +93,55 @@ function findNearestNode(position: number, ast: t.File, logger: Logger) {
   return result;
 }
 
-function addIgnoreComment(path: NodePath<t.Node>): void {
+function isNonCommentLine(codeLine: string): boolean {
+  return codeLine.indexOf("//") === -1;
+}
+
+export function getPositionOfNextNonCommentLine(codeLines: string[]): number {
+  return codeLines.findIndex(line => isNonCommentLine(line));
+}
+
+export function removeDuplicateErrors(codeLines: string[]): string[] {
+  if (!codeLines.length) {
+    return codeLines;
+  }
+
+  const completeIgnoreComment = "//" + ignoreComment;
+
+  return codeLines.reduceRight(
+    (previousLines, currentLine) => {
+      const commentPosition = currentLine
+        .trimLeft()
+        .indexOf(completeIgnoreComment);
+      // Let's keep all the code (without any comment)
+      if (commentPosition === -1) {
+        return [currentLine, ...previousLines];
+      }
+
+      const nextCodePos = getPositionOfNextNonCommentLine(previousLines);
+      if (nextCodePos === 0) {
+        // keep the necessary comment line
+        return [currentLine, ...previousLines];
+      } else {
+        // remove the unnecessary comment line (if no code is involved)
+        if (commentPosition === 0) {
+          return previousLines;
+        } else {
+          return [
+            currentLine.replace(completeIgnoreComment, ""),
+            ...previousLines
+          ];
+        }
+      }
+    },
+    [] as string[]
+  );
+}
+
+// We need to add a block comment so it's generated into an extra line
+// Block comments are not interpreted by typescript, so we need to change them to line comments in an extra step
+// This is a hacky workaround, but much better than trying to insert newlines in those cases instead
+function addIgnoreBlockComment(path: NodePath<t.Node>): void {
   if (!path || !path.node) {
     return;
   }
@@ -106,36 +154,10 @@ function addIgnoreComment(path: NodePath<t.Node>): void {
   ) {
     // @ts-ignore
     path.node.leadingComments.push({
-      type: "CommentLine",
+      type: "CommentBlock",
       value: ignoreComment
     });
   }
-}
-
-function findCommentPosition(node: NodePath<t.Node>, logger: Logger) {
-  logger.log("Finding comment position for", node.node);
-
-  // Error is on a literal, need to find parent expression
-  if (node.isLiteral()) {
-    logger.log("Treating node as a literal, finding parent expression");
-
-    return node.findParent(
-      parent => parent.isStatement() || parent.isExpression()
-    );
-  }
-
-  if (node.getAllPrevSiblings().length) {
-    const silblings = node.getAllPrevSiblings();
-    logger.log("Found previous silblings", silblings);
-
-    return silblings[silblings.length - 1];
-  }
-
-  if (node.isProgram()) {
-    return node;
-  }
-
-  return node.getStatementParent();
 }
 
 function fixErrorsForFile(
@@ -170,23 +192,36 @@ function fixErrorsForFile(
   // find all ast nodes
   const errorAstPaths = errorPositions
     .map(position => findNearestNode(position, ast, logger))
-    .map(node => findCommentPosition(node, logger))
     .filter(result => result !== null);
 
   logger.log(`Adding ${errorAstPaths.length} comments to ${fileName}`);
 
   // update ast nodes
-  errorAstPaths.forEach(addIgnoreComment);
+  errorAstPaths.forEach(addIgnoreBlockComment);
 
-  // save the file
+  // generate the code
   const code = generate(ast).code;
-  let prettyCode = code;
+
+  // replace comment types
+  const codeWithInlineComments = code
+    .split(`/*${ignoreComment}*/`)
+    .join(`//${ignoreComment}`);
+
+  // spot duplicate errors and remove them
+  const codeWithoutDuplicates = removeDuplicateErrors(
+    codeWithInlineComments.split("\n")
+  ).join("\n");
+
+  let prettyCode = codeWithoutDuplicates;
   try {
-    prettyCode = prettier.format(code, { parser: "typescript" });
+    prettyCode = prettier.format(codeWithoutDuplicates, {
+      parser: "typescript"
+    });
   } catch (e) {
     logger.info(`Could not prettify code for ${fileName}`);
   }
   logger.log(`Writing ${fileName}`);
+  // save the file
   fs.writeFileSync(fileName, prettyCode, "utf-8");
 }
 

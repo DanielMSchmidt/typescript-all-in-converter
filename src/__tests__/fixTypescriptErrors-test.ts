@@ -1,5 +1,4 @@
 import path from "path";
-import shell from "shelljs";
 import fs from "fs";
 import tmp from "tmp"; // @ts-ignore typescript-all-in
 import detectAndFixTypescriptErrors from "../fixTypescriptErrors";
@@ -44,12 +43,15 @@ describe("fixTypescriptErrors", () => {
     }
     `)
     ).toMatchInlineSnapshot(`
-                                                "function foo(str: string): number {
-                                                  // @ts-ignore typescript-all-in
-                                                  return 3 * str;
-                                                }
-                                                "
-                                `);
+      "function foo(str: string): number {
+        return (
+          3 *
+          // @ts-ignore typescript-all-in
+          str
+        );
+      }
+      "
+    `);
   });
 
   it("in normal expression", () => {
@@ -58,10 +60,10 @@ describe("fixTypescriptErrors", () => {
       const message: number = "hello world";
     `)
     ).toMatchInlineSnapshot(`
-                                                "// @ts-ignore typescript-all-in
-                                                const message: number = \\"hello world\\";
-                                                "
-                                `);
+      "const // @ts-ignore typescript-all-in
+        message: number = \\"hello world\\";
+      "
+    `);
   });
 
   it("in a lot of normal expressions", () => {
@@ -71,12 +73,12 @@ describe("fixTypescriptErrors", () => {
       const message3: boolean = true;
     `)
     ).toMatchInlineSnapshot(`
-                                                "const message1: boolean = true;
-                                                // @ts-ignore typescript-all-in
-                                                const message2: number = true;
-                                                const message3: boolean = true;
-                                                "
-                                `);
+      "const message1: boolean = true;
+      const // @ts-ignore typescript-all-in
+        message2: number = true;
+      const message3: boolean = true;
+      "
+    `);
   });
 
   it("inside a template string", () => {
@@ -89,17 +91,16 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-                                    "function fu(amountOfCats: number) {
-                                      return \`
-                                              LeadingLine
-                                              My \${
-                                                // @ts-ignore typescript-all-in
-                                                amountOfCats * \\"Cats\\"
-                                              }
-                                              TrailingLine\`;
-                                    }
-                                    "
-                        `);
+      "function fu(amountOfCats: number) {
+        return \`
+                LeadingLine
+                My \${amountOfCats *
+                  // @ts-ignore typescript-all-in
+                  \\"Cats\\"}
+                TrailingLine\`;
+      }
+      "
+    `);
   });
 
   it("inside a constructor", () => {
@@ -113,16 +114,19 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-                              "class Parent {}
+      "class Parent {}
 
-                              class MyClass extends Parent {
-                                constructor() {
-                                  // @ts-ignore typescript-all-in
-                                  super(...arguments);
-                                }
-                              }
-                              "
-                    `);
+      class MyClass extends Parent {
+        constructor() {
+          super(
+            // @ts-ignore typescript-all-in
+            ...// @ts-ignore typescript-all-in
+            arguments
+          );
+        }
+      }
+      "
+    `);
   });
 
   it("a function param", () => {
@@ -134,13 +138,15 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-                        "let firstLine = \\"yes\\";
-                        // @ts-ignore typescript-all-in
-                        export function fingerprintUrl(url) {
-                          const shouldUrlBeAnError = true;
-                        }
-                        "
-                `);
+      "let firstLine = \\"yes\\";
+      export function fingerprintUrl(
+        // @ts-ignore typescript-all-in
+        url
+      ) {
+        const shouldUrlBeAnError = true;
+      }
+      "
+    `);
   });
 
   it("multiple function params", () => {
@@ -151,13 +157,21 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-            "// @ts-ignore typescript-all-in
-            export default function stream(url, options = {}) {
-              // @ts-ignore typescript-all-in
-              return Observable.create(function(observer) {});
-            }
-            "
-        `);
+      "export default function stream(
+        // @ts-ignore typescript-all-in
+        url,
+        options = {}
+      ) {
+        return (
+          // @ts-ignore typescript-all-in
+          Observable.create(function(
+            // @ts-ignore typescript-all-in
+            observer
+          ) {})
+        );
+      }
+      "
+    `);
   });
 
   it("imports", () => {
@@ -167,12 +181,16 @@ describe("fixTypescriptErrors", () => {
       export function fingerprintUrl(url) {}
       `)
     ).toMatchInlineSnapshot(`
-                  "// @ts-ignore typescript-all-in
-                  import { help } from \\"./helpers\\";
-                  // @ts-ignore typescript-all-in
-                  export function fingerprintUrl(url) {}
-                  "
-            `);
+      "import {
+        help
+        // @ts-ignore typescript-all-in
+      } from \\"./helpers\\";
+      export function fingerprintUrl(
+        // @ts-ignore typescript-all-in
+        url
+      ) {}
+      "
+    `);
   });
 
   it("lives with future linebreaks", () => {
@@ -193,14 +211,20 @@ describe("fixTypescriptErrors", () => {
         // @ts-ignore typescript-all-in
         callback
       ) => {
-        // @ts-ignore typescript-all-in
-        if (!this.events[type]) {
+        if (
+          !// @ts-ignore typescript-all-in
+          // @ts-ignore typescript-all-in
+          this.events[type]
+        ) {
+          // @ts-ignore typescript-all-in
           // @ts-ignore typescript-all-in
           this.events[type] = [];
         }
 
         // @ts-ignore typescript-all-in
-        this.events[type].push(callback);
+        this// @ts-ignore typescript-all-in
+        .events[type]
+          .push(callback);
       };
       "
     `);
