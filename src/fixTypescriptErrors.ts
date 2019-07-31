@@ -160,6 +160,16 @@ function addIgnoreBlockComment(path: NodePath<t.Node>): void {
   }
 }
 
+// There are only a few places we should not insert a comment into
+function findAcceptableNode(node: NodePath) {
+  // We don't want to insert a comment inside of an import statement
+  if (node.findParent(parent => parent.isImportDeclaration()) !== null) {
+    const p = node.findParent(parent => parent.isImportDeclaration());
+    return p;
+  }
+  return node;
+}
+
 function fixErrorsForFile(
   diagnosticList: tsTypes.Diagnostic[],
   logger: Logger
@@ -192,6 +202,7 @@ function fixErrorsForFile(
   // find all ast nodes
   const errorAstPaths = errorPositions
     .map(position => findNearestNode(position, ast, logger))
+    .map(nodePath => findAcceptableNode(nodePath))
     .filter(result => result !== null);
 
   logger.log(`Adding ${errorAstPaths.length} comments to ${fileName}`);
