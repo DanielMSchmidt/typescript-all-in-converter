@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs";
-import tmp from "tmp"; // @ts-ignore typescript-all-in
+import tmp from "tmp";
+import { execSync } from "child_process";
 import detectAndFixTypescriptErrors from "../fixTypescriptErrors";
 
 const debugLogger = { log: () => {}, info: () => {} };
@@ -11,30 +12,56 @@ const defaultTsConfig = {
     module: "commonjs",
     sourceMap: true,
     strict: true,
-    esModuleInterop: true
-  }
+    esModuleInterop: true,
+    jsx: "React"
+  },
+  exclude: ["node_modules"]
 };
 
-function runFixer(input: string, tsConfig?: Object): string {
+function runFixer(input: string, isReact?: boolean, tsConfig?: Object): string {
   const tmpFolder = tmp.dirSync();
   const tmpFolderPath = tmpFolder.name;
+  const fileName = isReact ? "index.tsx" : "index.ts";
 
-  fs.writeFileSync(path.resolve(tmpFolderPath, "index.ts"), input, "utf-8");
+  fs.writeFileSync(path.resolve(tmpFolderPath, fileName), input, "utf-8");
   fs.writeFileSync(
     path.resolve(tmpFolderPath, "noDefaultExport.ts"),
     `
   module.exports = "FOO"`,
     "utf-8"
   );
+
   fs.writeFileSync(
     path.resolve(tmpFolderPath, "tsconfig.json"),
     JSON.stringify(tsConfig || defaultTsConfig),
     "utf-8"
   );
 
+  // TODO: maybe we can replace this with the local copy by
+  // adding a resolve path to the tsconfig or by symlinking it
+  if (isReact) {
+    fs.writeFileSync(
+      path.resolve(tmpFolderPath, "package.json"),
+      `{
+    "name": "tmp",
+    "version": "1.0.0",
+    "dependencies": {
+      "@types/react": "^16.8.24",
+      "react": "^16.8.6"
+    }
+  }
+  `,
+      "utf-8"
+    );
+
+    execSync("npm install", {
+      cwd: tmpFolderPath
+    });
+  }
+
   detectAndFixTypescriptErrors(tmpFolderPath, [], console);
   const content = fs.readFileSync(
-    path.resolve(tmpFolderPath, "index.ts"),
+    path.resolve(tmpFolderPath, fileName),
     "utf-8"
   );
   tmpFolder.removeCallback();
@@ -50,15 +77,15 @@ describe("fixTypescriptErrors", () => {
     }
     `)
     ).toMatchInlineSnapshot(`
-                  "function foo(str: string): number {
-                    return (
-                      3 *
-                      // @ts-ignore typescript-all-in
-                      str
-                    );
-                  }
-                  "
-            `);
+                                                "function foo(str: string): number {
+                                                  return (
+                                                    3 *
+                                                    // @ts-ignore typescript-all-in
+                                                    str
+                                                  );
+                                                }
+                                                "
+                                `);
   });
 
   it("in normal expression", () => {
@@ -67,10 +94,10 @@ describe("fixTypescriptErrors", () => {
       const message: number = "hello world";
     `)
     ).toMatchInlineSnapshot(`
-                  "const // @ts-ignore typescript-all-in
-                    message: number = \\"hello world\\";
-                  "
-            `);
+                                                "const // @ts-ignore typescript-all-in
+                                                  message: number = \\"hello world\\";
+                                                "
+                                `);
   });
 
   it("in a lot of normal expressions", () => {
@@ -80,12 +107,12 @@ describe("fixTypescriptErrors", () => {
       const message3: boolean = true;
     `)
     ).toMatchInlineSnapshot(`
-                  "const message1: boolean = true;
-                  const // @ts-ignore typescript-all-in
-                    message2: number = true;
-                  const message3: boolean = true;
-                  "
-            `);
+                                                "const message1: boolean = true;
+                                                const // @ts-ignore typescript-all-in
+                                                  message2: number = true;
+                                                const message3: boolean = true;
+                                                "
+                                `);
   });
 
   it("inside a template string", () => {
@@ -98,16 +125,16 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-                  "function fu(amountOfCats: number) {
-                    return \`
-                            LeadingLine
-                            My \${amountOfCats *
-                              // @ts-ignore typescript-all-in
-                              \\"Cats\\"}
-                            TrailingLine\`;
-                  }
-                  "
-            `);
+                                                "function fu(amountOfCats: number) {
+                                                  return \`
+                                                          LeadingLine
+                                                          My \${amountOfCats *
+                                                            // @ts-ignore typescript-all-in
+                                                            \\"Cats\\"}
+                                                          TrailingLine\`;
+                                                }
+                                                "
+                                `);
   });
 
   it("inside a constructor", () => {
@@ -121,19 +148,19 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-                  "class Parent {}
+                                                "class Parent {}
 
-                  class MyClass extends Parent {
-                    constructor() {
-                      super(
-                        // @ts-ignore typescript-all-in
-                        ...// @ts-ignore typescript-all-in
-                        arguments
-                      );
-                    }
-                  }
-                  "
-            `);
+                                                class MyClass extends Parent {
+                                                  constructor() {
+                                                    super(
+                                                      // @ts-ignore typescript-all-in
+                                                      ...// @ts-ignore typescript-all-in
+                                                      arguments
+                                                    );
+                                                  }
+                                                }
+                                                "
+                                `);
   });
 
   it("a function param", () => {
@@ -145,15 +172,15 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-                  "let firstLine = \\"yes\\";
-                  export function fingerprintUrl(
-                    // @ts-ignore typescript-all-in
-                    url
-                  ) {
-                    const shouldUrlBeAnError = true;
-                  }
-                  "
-            `);
+                                                "let firstLine = \\"yes\\";
+                                                export function fingerprintUrl(
+                                                  // @ts-ignore typescript-all-in
+                                                  url
+                                                ) {
+                                                  const shouldUrlBeAnError = true;
+                                                }
+                                                "
+                                `);
   });
 
   it("multiple function params", () => {
@@ -164,21 +191,21 @@ describe("fixTypescriptErrors", () => {
       }
       `)
     ).toMatchInlineSnapshot(`
-                  "export default function stream(
-                    // @ts-ignore typescript-all-in
-                    url,
-                    options = {}
-                  ) {
-                    return (
-                      // @ts-ignore typescript-all-in
-                      Observable.create(function(
-                        // @ts-ignore typescript-all-in
-                        observer
-                      ) {})
-                    );
-                  }
-                  "
-            `);
+                                                "export default function stream(
+                                                  // @ts-ignore typescript-all-in
+                                                  url,
+                                                  options = {}
+                                                ) {
+                                                  return (
+                                                    // @ts-ignore typescript-all-in
+                                                    Observable.create(function(
+                                                      // @ts-ignore typescript-all-in
+                                                      observer
+                                                    ) {})
+                                                  );
+                                                }
+                                                "
+                                `);
   });
 
   it("imports", () => {
@@ -188,16 +215,14 @@ describe("fixTypescriptErrors", () => {
       export function fingerprintUrl(url) {}
       `)
     ).toMatchInlineSnapshot(`
-                  "import {
-                    help
-                    // @ts-ignore typescript-all-in
-                  } from \\"./helpers\\";
-                  export function fingerprintUrl(
-                    // @ts-ignore typescript-all-in
-                    url
-                  ) {}
-                  "
-            `);
+                        "// @ts-ignore typescript-all-in
+                        import { help } from \\"./helpers\\";
+                        export function fingerprintUrl(
+                          // @ts-ignore typescript-all-in
+                          url
+                        ) {}
+                        "
+                `);
   });
 
   it("lives with future linebreaks", () => {
@@ -211,41 +236,105 @@ describe("fixTypescriptErrors", () => {
       };
       `)
     ).toMatchInlineSnapshot(`
-                  "// @ts-ignore typescript-all-in
-                  this.addListener = (
-                    // @ts-ignore typescript-all-in
-                    type,
-                    // @ts-ignore typescript-all-in
-                    callback
-                  ) => {
-                    if (
-                      !// @ts-ignore typescript-all-in
-                      // @ts-ignore typescript-all-in
-                      this.events[type]
-                    ) {
-                      // @ts-ignore typescript-all-in
-                      // @ts-ignore typescript-all-in
-                      this.events[type] = [];
-                    }
+                                                "// @ts-ignore typescript-all-in
+                                                this.addListener = (
+                                                  // @ts-ignore typescript-all-in
+                                                  type,
+                                                  // @ts-ignore typescript-all-in
+                                                  callback
+                                                ) => {
+                                                  if (
+                                                    !// @ts-ignore typescript-all-in
+                                                    // @ts-ignore typescript-all-in
+                                                    this.events[type]
+                                                  ) {
+                                                    // @ts-ignore typescript-all-in
+                                                    // @ts-ignore typescript-all-in
+                                                    this.events[type] = [];
+                                                  }
 
-                    // @ts-ignore typescript-all-in
-                    this// @ts-ignore typescript-all-in
-                    .events[type]
-                      .push(callback);
-                  };
-                  "
-            `);
+                                                  // @ts-ignore typescript-all-in
+                                                  this// @ts-ignore typescript-all-in
+                                                  .events[type]
+                                                    .push(callback);
+                                                };
+                                                "
+                                `);
   });
 
-  it.only("does not split up an import", () => {
+  it("does not split up an import", () => {
     expect(
       runFixer(`
       import Foo from "./noDefaultExport.ts";
       `)
     ).toMatchInlineSnapshot(`
-      "// @ts-ignore typescript-all-in
-      import Foo from \\"./noDefaultExport.ts\\";
-      "
-    `);
+                                    "// @ts-ignore typescript-all-in
+                                    import Foo from \\"./noDefaultExport.ts\\";
+                                    "
+                        `);
+  });
+
+  describe("JSX", () => {
+    it("does not change a thing if JSX is valid", () => {
+      expect(
+        runFixer(
+          `
+        const dom = <span>Should Work</span>;
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+                "
+                        const dom = <span>Should Work</span>;
+                        "
+            `);
+    });
+
+    it("adds a comment for single line jsx", () => {
+      expect(
+        runFixer(
+          `
+        const dom = <h1 foo="bar">Should Work</h1>;
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+                "const dom = (
+                  <// @ts-ignore typescript-all-in
+                  h1
+                    foo=\\"bar\\"
+                  >
+                    Should Work
+                  </h1>
+                );
+                "
+            `);
+    });
+
+    it("adds a comment for multi line jsx", () => {
+      expect(
+        runFixer(
+          `
+        const dom = (
+          <div>
+            <h1 foo="bar">My Text</h1>
+          </div>
+        );
+        
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+        "const dom = (
+          <div>
+            {/*
+         // @ts-ignore */}
+            <h1 foo=\\"bar\\">My Text</h1>
+          </div>
+        );
+        
+        "
+      `);
+    });
   });
 });
