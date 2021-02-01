@@ -28,13 +28,13 @@
     "@types/prettier": "^1.16.4",
     "@types/recursive-readdir": "^2.2.0",
     "@types/shelljs": "^0.8.5",
-    "@types/yargs": "^13.0.0",
+    "@types/yargs": "^16.0.0",
     "glob": "^7.1.4",
     "recursive-readdir": "^2.2.2",
     "replace-in-file": "^4.1.1",
     "shelljs": "^0.8.3",
     "ts-node": "^8.3.0",
-    "yargs": "^13.2.4"
+    "yargs": "^16.0.0"
   },
   "peerDependencies": {
     "typescript": ">= 3",
