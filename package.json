@@ -49,6 +49,6 @@
     "pretty-quick": "1.11.1",
     "tmp": "^0.1.0",
     "ts-jest": "24.0.2",
-    "typescript": "^3.5.2"
+    "typescript": "3.9.10"
   }
 }
